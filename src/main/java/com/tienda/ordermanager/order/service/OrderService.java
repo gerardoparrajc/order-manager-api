@@ -14,6 +14,7 @@ import com.tienda.ordermanager.order.dto.CreateOrderDTO;
 import com.tienda.ordermanager.order.dto.OrderItemRequestDTO;
 import com.tienda.ordermanager.order.dto.OrderItemResponseDTO;
 import com.tienda.ordermanager.order.dto.OrderResponseDTO;
+import com.tienda.ordermanager.order.mapper.OrderMapper;
 import com.tienda.ordermanager.order.model.Order;
 import com.tienda.ordermanager.order.model.OrderItem;
 import com.tienda.ordermanager.order.model.OrderStatus;
@@ -33,6 +34,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final OrderMapper orderMapper; // Inyectado por Spring gracias a ComponentModel = "spring"
 
     @Transactional 
     public OrderResponseDTO createOrder(CreateOrderDTO request) {
@@ -89,7 +91,7 @@ public class OrderService {
         // 4. Guardar la orden (cascade = ALL guarda automáticamente los OrderItems)
         Order savedOrder = orderRepository.save(order);
 
-        return mapToResponseDTO(savedOrder);
+        return orderMapper.toResponseDTO(savedOrder);
     }
 
     @Transactional (readOnly = true)
@@ -97,9 +99,11 @@ public class OrderService {
         Order order = orderRepository.findWithDetailsById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + id));
 
-        return mapToResponseDTO(order);
+        return orderMapper.toResponseDTO(order);
     }
 
+
+    // SI se utiliza MapStruct, este método ya no es necesario
     private OrderResponseDTO mapToResponseDTO(Order order) {
         List<OrderItemResponseDTO> itemDTOs = order.getItems().stream()
             .map(item -> new OrderItemResponseDTO(
